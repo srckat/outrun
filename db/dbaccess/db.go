@@ -30,38 +30,48 @@ func Set(bucket, key string, value []byte) error {
 }
 
 func Get(bucket, key string) ([]byte, error) {
-	CheckIfDBSet()
-	var value []byte
-	err := db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucket))
-		value = b.Get([]byte(key))
-		if value == nil {
-			return errors.New("no value named '" + key + "' in bucket '" + bucket + "'")
-		}
-		return nil
-	})
-	result, derr := Decompress(value) // decompress the result
-	if derr != nil {
-		return result, derr
-	}
-	return result, err
+    CheckIfDBSet()
+    var value []byte
+    err := db.View(func(tx *bolt.Tx) error {
+        b := tx. Bucket([]byte(bucket))
+        if b == nil {
+            return errors.New("bucket '" + bucket + "' does not exist")
+        }
+        value = b.Get([]byte(key))
+        if value == nil {
+            return errors.New("no value named '" + key + "' in bucket '" + bucket + "'")
+        }
+        return nil
+    })
+    result, derr := Decompress(value)
+    if derr != nil {
+        return result, derr
+    }
+    return result, err
 }
 
 func Delete(bucket, key string) error {
-	CheckIfDBSet()
-	return db.View(func(tx *bolt.Tx) error {
-		return tx.Bucket([]byte(bucket)).Delete([]byte(key))
-	})
+    CheckIfDBSet()
+    return db.View(func(tx *bolt. Tx) error {
+        b := tx.Bucket([]byte(bucket))
+        if b == nil {
+            return errors.New("bucket '" + bucket + "' does not exist")
+        }
+        return b.Delete([]byte(key))
+    })
 }
 
 func ForEachKey(bucket string, each func(k, v []byte) error) error {
-	CheckIfDBSet()
-	err := db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucket))
-		err2 := b.ForEach(each)
-		return err2
-	})
-	return err
+    CheckIfDBSet()
+    err := db.View(func(tx *bolt.Tx) error {
+        b := tx.Bucket([]byte(bucket))
+        if b == nil {
+            return errors.New("bucket '" + bucket + "' does not exist")
+        }
+        err2 := b.ForEach(each)
+        return err2
+    })
+    return err
 }
 
 func ForEachLogic(each func(tx *bolt.Tx) error) error {
